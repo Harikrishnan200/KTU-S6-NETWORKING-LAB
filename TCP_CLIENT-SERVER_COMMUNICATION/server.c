@@ -10,7 +10,7 @@
 int main() {
     int server_socket, client_socket;                  
     struct sockaddr_in server_address, client_address;  //server_socket and client_socket are declared to store the server and client socket file descriptors respectively. 
-    socklen_t client_address_len = sizeof(client_address); //client_address_len stores the size of the client address structure. 
+    socklen_t client_address_len = sizeof(client_address); //client_address_len stores the size of the client address structure. ,socklen_t is a data type used in socket programming in C. It stands for "socket length type". It's used to represent the length of socket addresses. 
     char buffer[BUFFER_SIZE] = {0};
     char *message = "Hello from server";
 
@@ -18,7 +18,7 @@ int main() {
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("Socket creation error");
         exit(EXIT_FAILURE);
-    }
+    }  
 
     // Set server address     (Here, the server address structure server_address is initialized)
     server_address.sin_family = AF_INET;
