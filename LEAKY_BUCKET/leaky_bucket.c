@@ -1,75 +1,64 @@
+
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-#define NOF_PACKETS 10
-
-// function to generate random number between 0 and 100
-int randm(int a)
+void main()
 {
-    int rn = (random() % 10) % a;
-    return rn == 0 ? 1 : rn;
-}
+    int bucket_capacity = 0, outflow_size = 0;
 
-int main()
-{
-    int packet_sz[NOF_PACKETS], i, clk, b_size, o_rate, p_sz_rm = 0, p_sz, p_time, op;
-    // b_size = bandwidth in bytes/sec
-    // o_rate = output rate in packets/sec
-    // p_sz = packet size in bytes
-    // p_time = packet time in sec
-    // op = operation to be performed on the packet
-    // clk = clock in sec
-    // p_sz_rm = packet size in bytes removed from the buffer
-    // p_sz = packet size in bytes added to the buffer
-
-    for (i = 0; i < NOF_PACKETS; ++i)
-        packet_sz[i] = randm(6) * 10; // generate random packet size between 0 and 60 bytes
-
-    for (i = 0; i < NOF_PACKETS; ++i)
-        printf("\npacket[%d]:%d bytes\t", i, packet_sz[i]); // print the packet size
+    // Accept Bucket Capacity
+    printf("\n\nEnter bucket capacity: ");
+    scanf("%d", &bucket_capacity);
     
-
-    printf("\nEnter the Output rate:");
-    scanf("%d", &o_rate);
-    printf("Enter the Bucket Size:");
-    scanf("%d", &b_size);
-
-    for (i = 0; i < NOF_PACKETS; ++i)
-    {   
-        // calculate the packet time
-        if ((packet_sz[i] + p_sz_rm) > b_size)
-            //if packet size is greater than the bucket size
-            if (packet_sz[i] > b_size) /*compare the packet siz with bucket size*/
-                printf("\n\nIncoming packet size (%dbytes) is Greater than bucket capacity (%dbytes)-PACKET REJECTED", packet_sz[i], b_size);
-            else
-                printf("\n\nBucket capacity exceeded-PACKETS REJECTED!!");
+    // Accept Packet Outflow Size
+    printf("Enter packet outflow size: ");
+    scanf("%d", &outflow_size);
+    
+    printf("\n");
+    
+    int incoming_packets_size = 0, available_size = bucket_capacity, used_size = 0, packet_overflow = 0;
+    
+    while(1)
+    {
+        printf("\n[Enter -1 to exit]");
+        
+        // Accept Incoming Packets Size
+        printf("\nEnter the incoming packets size: ");
+        scanf("%d", &incoming_packets_size);
+        
+        // Check whether user needs to exit
+        if(incoming_packets_size == -1)
+        {
+            printf("\nExit\n\n");
+            exit(0);
+        }
         else
         {
-            p_sz_rm += packet_sz[i];
-            printf("\n\nIncoming Packet size: %d", packet_sz[i]);
-            printf("\nBytes remaining to Transmit: %d", p_sz_rm);
-            p_time = randm(4) * 10; // generate random packet time between 0 and 40 secs
-            printf("\nTime left for transmission: %d units", p_time);
-            for (clk = 10; clk <= p_time; clk += 10)
+            // Check whether space available in bucket and drop overflowed packets
+            if(incoming_packets_size <= available_size)
+                available_size -= incoming_packets_size;
+            else
             {
-                sleep(1);
-                if (p_sz_rm)
-                {   
-                    // if the packet size is greater than the bucket size
-                    if (p_sz_rm <= o_rate) /*packet size remaining comparing with output rate*/
-                        op = p_sz_rm, p_sz_rm = 0; // if the packet size is less than the output rate, then remove the packet size from the buffer
-                    else
-                        op = o_rate, p_sz_rm -= o_rate; // else remove the output rate from the buffer
-                    printf("\nPacket of size %d Transmitted", op);
-                    printf("----Bytes Remaining to Transmit: %d", p_sz_rm);
-                }
-                else
-                {
-                    printf("\nTime left for transmission: %d units", p_time - clk);
-                    printf("\nNo packets to transmit!!");
-                }
+                printf("\nDropped %d packet(s).", (incoming_packets_size - available_size));
+                available_size = 0;
             }
+            
+            // Calculate used size
+            used_size = bucket_capacity - available_size;
+            
+            // Check whether outflow size is more than used size
+            if(outflow_size > used_size)
+            {
+                printf("\nOutflow size changed from %d to %d.", outflow_size, used_size);
+                outflow_size = used_size;
+            }
+            
+            // Print Bucket Usage
+            printf("\nBucket size of %d used out of %d.", used_size, bucket_capacity);
+            
+            // Leak out packets
+            printf("\nLeaked out %d packet(s).\n", outflow_size);
+            available_size += outflow_size;
         }
     }
 }
