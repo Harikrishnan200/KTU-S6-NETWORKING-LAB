@@ -1,55 +1,79 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<sys/types.h>
-#include<netinet/in.h>
-#include<netdb.h>
-#include<strings.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
-int main()
-{
-    int serversocket,port; //serversocket is the socket descriptor , port is the port number
-    struct sockaddr_in serveraddr,clientaddr; //creating a structure of type sockaddr_in for server and client
-    socklen_t len; //creating a variable to store the length of the server address
-    char message[50];//creating a char array to store the message
-    //socket creation.
-    serversocket=socket(AF_INET,SOCK_DGRAM,0);//creating a socket
-    //steps involved in defining the serveraddress.
-    bzero((char*)&serveraddr,sizeof(serveraddr)); //initializing the server address to zero
-    serveraddr.sin_family=AF_INET;//setting the family of the server address to AF_INET
+#define PORT 12345
+#define BUFFER_SIZE 1024
 
-    printf("Enter the port number ");
-    scanf("%d",&port);
-    serveraddr.sin_port=htons(port);//setting the port number of the server address to port , htons is used to convert the port number to network byte order
-    serveraddr.sin_addr.s_addr=INADDR_ANY; //setting the address of the server address to INADDR_ANY , INADDR_ANY is used to bind the socket to all the interfaces of the machine
-    //binding the socket to the operating system.
-    bind(serversocket,(struct sockaddr*)&serveraddr,sizeof(serveraddr));//bind is used to bind the socket to the operating system
-    printf("\nWaiting for the client connection\n");
-    bzero((char*)&clientaddr,sizeof(clientaddr));//initializing the client address to zero
-    len=sizeof(clientaddr);//storing the length of the client address in len
+int main() {
+    int server_socket;
+    struct sockaddr_in server_addr, client_addr;
+    char buffer[BUFFER_SIZE];
 
-    //receiving message from the client.
-    recvfrom(serversocket,message,sizeof(message),0,(struct sockaddr*)&clientaddr,&len);//recvfrom is used to receive the message from the client
-    printf("\nConnection received from client.\n");
-    printf("\nThe client has send:\t%s\n",message);
-    printf("\nSending message to the client.\n");
-    //sending message to the client.
-    sendto(serversocket,"YOUR MESSAGE RECEIVED.",sizeof("YOUR MESSAGERECEIVED."),0,( struct sockaddr*)&clientaddr,sizeof(clientaddr));//sendto is used to send the message to the client
-    close(serversocket);
+    // Create UDP socket
+    if ((server_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Initialize server address struct
+    memset(&server_addr, 0, sizeof(server_addr));  //memset: This is a function provided by the C standard library. It stands for "memory set" and is commonly used to set a block of memory to a particular value.
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+
+    // Bind socket to address and port
+    if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+        perror("Bind failed");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Server is listening on port %d...\n", PORT);
+
+    while (1) {
+        socklen_t client_addr_len = sizeof(client_addr);
+
+        // Receive message from client
+        int recv_len = recvfrom(server_socket, buffer, BUFFER_SIZE, 0,
+                                (struct sockaddr *)&client_addr, &client_addr_len);
+        if (recv_len == -1) {
+            perror("Receive failed");
+            exit(EXIT_FAILURE);
+        }
+
+        // Print received message
+        buffer[recv_len] = '\0';
+        printf("Received message from client: %s\n", buffer);
+
+        // Echo message back to client
+        if (sendto(server_socket, buffer, recv_len, 0,
+                   (struct sockaddr *)&client_addr, client_addr_len) == -1) {
+            perror("Sendto failed");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Close socket
+    close(server_socket);
+
+    return 0;
 }
 
+ /* 
+In the case of UDP socket programming, the loop described in the 
+provided code is used to handle multiple client communications concurrently, 
+rather than sequentially accepting connections from multiple clients as you might see in TCP socket programming.
+With UDP, each client communicates with the server by sending individual datagrams (packets), 
+and the server can handle these datagrams independently. The server does not establish a persistent connection with 
+each client as in TCP; instead, it simply listens for incoming datagrams and responds to them.
+   */
 
 
-/*
-s6d2@user-HP-280-G3-MT:~/Networking-Lab-S6/Socket-Programming/UDP$ gcc server.c -o server
-s6d2@user-HP-280-G3-MT:~/Networking-Lab-S6/Socket-Programming/UDP$ ./server
-Enter the port number 6000
+  /*n the recvfrom() function call, client_addr_len represents the size of the client_addr structure that is passed as an argument.
 
-Waiting for the client connection
-
-Connection received from client.
-
-The client has send:    HI I AM CLIENT...
-
-Sending message to the client.
-s6d2@user-HP-280-G3-MT:~/Networking-Lab-S6/Socket-Programming/UDP$ 
-*/
+The recvfrom() function is used to receive messages from a socket. 
+When using UDP sockets, it's common to receive messages from different clients. To identify the sender of the received message, 
+recvfrom() expects a pointer to a socket address structure (struct sockaddr) where it can store the sender's address.
+ Additionally, it also requires the size of this address structure.*/

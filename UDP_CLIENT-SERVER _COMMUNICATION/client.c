@@ -1,47 +1,55 @@
-#include<stdio.h>
-#include<unistd.h>
-#include<stdlib.h>
-#include<netinet/in.h>
-#include<netdb.h>
-#include<strings.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <arpa/inet.h>
 
-int main()
-{
-    int clientsocket,port; //clientsocket is the socket descriptor , port is the port number
-    struct sockaddr_in serveraddr; //creating a structure of type sockaddr_in for server
-    socklen_t len; //creating a variable to store the length of the server address
-    struct hostent *server; //creating a structure of type hostent for server
-    char message[50]; //creating a char array to store the message
-    
-    clientsocket=socket(AF_INET,SOCK_DGRAM,0);//creating a socket
-    //steps involved in the server address creation.
-    bzero((char*)&serveraddr,sizeof(serveraddr));//initializing the server address to zero
-    len=sizeof(serveraddr);//storing the length of the server address in len
-    serveraddr.sin_family=AF_INET;//setting the family of the server address to AF_INET
+#define SERVER_IP "127.0.0.1"
+#define PORT 12345
+#define BUFFER_SIZE 1024
 
-    printf("Enter the port number ");
-    scanf("%d",&port);
-    serveraddr.sin_port=htons(port);//setting the port number of the server address to port , htons is used to convert the port number to network byte order
-    fgets(message,2,stdin);//fgets is used to read the message from the user and storing it in message 2 is the size of the message
-    printf("\nSending message for server connection\n");
-    //sending message.
-    sendto(clientsocket,"HI I AM CLIENT...",sizeof("HI I AM CLIENT...."),0,(struct sockaddr*)&serveraddr,sizeof(serveraddr)); //sendto is used to send the message to the server
-    printf("\nReceiving message from server.\n");
-    //receiving messages.
-    recvfrom(clientsocket,message,sizeof(message),0,(struct sockaddr*)&serveraddr,&len);//recvfrom is used to receive the message from the server
-    printf("\nMessage received:\t%s\n",message);
-    close(clientsocket);//closing the socket
+int main() {
+    int client_socket;
+    struct sockaddr_in server_addr;
+    char buffer[BUFFER_SIZE];
+    const char *message = "Hello, server!";
+
+    // Create UDP socket
+    if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+        perror("Socket creation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Initialize server address struct
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    server_addr.sin_port = htons(PORT);
+
+    // Send message to server
+    if (sendto(client_socket, message, strlen(message), 0,
+               (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
+        perror("Sendto failed");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("Message sent to server: %s\n", message);
+
+    // Receive response from server
+    socklen_t server_addr_len = sizeof(server_addr);
+    int recv_len = recvfrom(client_socket, buffer, BUFFER_SIZE, 0,
+                            (struct sockaddr *)&server_addr, &server_addr_len);
+    if (recv_len == -1) {
+        perror("Receive failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Print server's response
+    buffer[recv_len] = '\0';
+    printf("Received response from server: %s\n", buffer);
+
+    // Close socket
+    close(client_socket);
+
+    return 0;
 }
-
-/*
-s6d2@user-HP-280-G3-MT:~/Networking-Lab-S6/Socket-Programming/UDP$ gcc client.c -o client
-s6d2@user-HP-280-G3-MT:~/Networking-Lab-S6/Socket-Programming/UDP$ ./client
-Enter the port number 6000
-
-Sending message for server connection
-
-Receiving message from server.
-
-Message received:       YOUR MESSAGE RECEIVED.
-s6d2@user-HP-280-G3-MT:~/Networking-Lab-S6/Socket-Programming/UDP$ 
-*/
