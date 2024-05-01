@@ -53,3 +53,11 @@ int main() {
 
     return 0;
 }
+
+
+/*output
+
+Message sent to server: Hello from Client 1!
+Received response from server: Hello from Client 1!
+
+*/

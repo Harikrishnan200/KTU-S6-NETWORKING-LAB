@@ -37,7 +37,7 @@ int main() {
 
         // Receive message from client
         int recv_len = recvfrom(server_socket, buffer, BUFFER_SIZE, 0,
-                                (struct sockaddr *)&client_addr, &client_addr_len);
+                                (struct sockaddr *)&client_addr, &client_addr_len);  //recvfrom() call, 0 is used to indicate that none of these flags are being passed
         if (recv_len == -1) {
             perror("Receive failed");
             exit(EXIT_FAILURE);
@@ -77,3 +77,12 @@ The recvfrom() function is used to receive messages from a socket.
 When using UDP sockets, it's common to receive messages from different clients. To identify the sender of the received message, 
 recvfrom() expects a pointer to a socket address structure (struct sockaddr) where it can store the sender's address.
  Additionally, it also requires the size of this address structure.*/
+
+
+ /* 
+ output
+ 
+ Server is listening on port 12345...
+Received message from client: Hello from Client 1!
+
+*/
