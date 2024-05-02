@@ -31,3 +31,19 @@ int main(int arg,char*argv[])
        close(sockfd);
        return 0;
 }
+
+/*
+output:
+
+client.c
+Enter the source file name: demo.txt
+Hello World
+
+server.c
+Binding...
+Listening...
+client message 
+File name :demo.txt
+File Transfered
+
+*/

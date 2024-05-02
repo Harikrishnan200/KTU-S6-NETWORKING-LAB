@@ -18,10 +18,12 @@ int main(int afg, char *argv)
        struct sockaddr_in serv_addr,cli_addr;
        char t[MAX], str[MAX];
        strcpy(t,"exit");
+
        sockfd=socket(AF_INET, SOCK_STREAM,0);
        serv_addr.sin_family=AF_INET;
        serv_addr.sin_addr.s_addr=INADDR_ANY;
        serv_addr.sin_port=htons(SERV_TCP_PORT);
+       
        printf("\nBinded");
        bind(sockfd,(struct sockaddr*)&serv_addr, sizeof(serv_addr));
        printf("\nListening...");
