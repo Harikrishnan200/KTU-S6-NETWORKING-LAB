@@ -37,8 +37,7 @@ output:
 
 client.c
 Enter the source file name: demo.txt
-Hello World
-
+This is the file to be tansfered
 server.c
 Binding...
 Listening...
