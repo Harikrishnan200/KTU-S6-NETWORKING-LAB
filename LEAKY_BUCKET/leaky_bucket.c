@@ -1,64 +1,81 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#define min(x,y) (x<y)?x:y
 
-void main()
+int main()
 {
-    int bucket_capacity = 0, outflow_size = 0;
+	int outrate,drop=0,bsize,rem=0,nsec;
+	int input[20]={0},i=0,ch,x,flag;
+	
+	printf("Enter Bucket(Bytes) Size : ");
+	scanf("%d",&bsize);
+	printf("Enter output rate(Bytes/sec) : ");
+	scanf("%d",&outrate);
+	
+	do
+	{
+		printf("Enter the size(Bytes) of packet coming at sec %d : ",i+1);	
+		scanf("%d",&input[i]);
+		i++;
+		printf("Enter 1 to continue/ 0 to quit :");
+		scanf("%d",&ch);
+	}while(ch);
+	
+	nsec=i;
+	
+	
+	printf("\nTime Recieved\t Sent \t Dropped \t Remaining\n");
+	for(i=0;i<nsec ||rem ;i++)
+	{	
+		flag=0;
+		printf("%d",i+1);
+		printf(" \t%d",input[i]);
 
-    // Accept Bucket Capacity
-    printf("\n\nEnter bucket capacity: ");
-    scanf("%d", &bucket_capacity);
-    
-    // Accept Packet Outflow Size
-    printf("Enter packet outflow size: ");
-    scanf("%d", &outflow_size);
-    
-    printf("\n");
-    
-    int incoming_packets_size = 0, available_size = bucket_capacity, used_size = 0, packet_overflow = 0;
-    
-    while(1)
-    {
-        printf("\n[Enter -1 to exit]");
+		if(input[i]+rem>bsize){
+			flag=input[i];
+			printf("\t%3d",min(rem,outrate));
+			if(rem-outrate>0)
+				rem=rem-outrate;
+			else
+				rem=0;
+			printf("%10d%15d\n",flag,rem);
+			continue;
+		}	
         
-        // Accept Incoming Packets Size
-        printf("\nEnter the incoming packets size: ");
-        scanf("%d", &incoming_packets_size);
-        
-        // Check whether user needs to exit
-        if(incoming_packets_size == -1)
-        {
-            printf("\nExit\n\n");
-            exit(0);
-        }
-        else
-        {
-            // Check whether space available in bucket and drop overflowed packets
-            if(incoming_packets_size <= available_size)
-                available_size -= incoming_packets_size;
-            else
-            {
-                printf("\nDropped %d packet(s).", (incoming_packets_size - available_size));
-                available_size = 0;
-            }
-            
-            // Calculate used size
-            used_size = bucket_capacity - available_size;
-            
-            // Check whether outflow size is more than used size
-            if(outflow_size > used_size)
-            {
-                printf("\nOutflow size changed from %d to %d.", outflow_size, used_size);
-                outflow_size = used_size;
-            }
-            
-            // Print Bucket Usage
-            printf("\nBucket size of %d used out of %d.", used_size, bucket_capacity);
-            
-            // Leak out packets
-            printf("\nLeaked out %d packet(s).\n", outflow_size);
-            available_size += outflow_size;
-        }
-    }
+		printf("\t%3d",min(input[i]+rem,outrate));
+		
+		if((x=input[i]+rem-outrate)>0)
+		{
+			if(x>bsize)
+			{
+				rem=bsize;
+				drop=x-bsize;
+			}
+			else
+			{
+				rem=x;
+				drop=0;
+			}
+		}
+		else
+		{
+			drop=0;
+			rem=0;
+		}
+		
+		/*
+		if(flag!=0)
+		{
+			rem -= (flag+outrate);
+			printf("%10d%15d\n",flag,rem);
+			flag=0;
+		}
+
+		else
+				
+		*/
+			printf("%10d%15d\n",drop,rem);
+	}
+	return 0;
 }

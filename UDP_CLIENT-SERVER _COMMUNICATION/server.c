@@ -13,7 +13,7 @@ int main() {
     char buffer[BUFFER_SIZE];
 
     // Create UDP socket
-    if ((server_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
+    if ((server_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {  // 0 indicates default protocol
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }

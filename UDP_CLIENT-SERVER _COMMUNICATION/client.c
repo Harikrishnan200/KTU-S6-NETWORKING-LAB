@@ -57,7 +57,7 @@ int main() {
 
 /*output
 
-Message sent to server: Hello from Client 1!
-Received response from server: Hello from Client 1!
+Message sent to server: Hello, server!
+Received response from server: Hello, client!
 
 */
