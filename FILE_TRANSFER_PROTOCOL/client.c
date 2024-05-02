@@ -44,6 +44,6 @@ Binding...
 Listening...
 client message 
 File name :demo.txt
-File Transfered
+File transfered
 
 */
