@@ -23,8 +23,8 @@ int main(int argc, char *argv[]) {
         printf("Usage: %s <port>\n", argv[0]);
         exit(1);
     }
-
-    int port = atoi(argv[1]);
+ 
+    int port = atoi(argv[1]);  // convert a string representation of an integer 
     int sockfd;
     struct sockaddr_in serverAddr;
     char buffer[MAX_DATA_SIZE];
@@ -35,7 +35,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    memset(&serverAddr, '\0', sizeof(serverAddr));
+    memset(&serverAddr, '\0', sizeof(serverAddr));  //\0' has a value of 0
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
     serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -50,8 +50,8 @@ int main(int argc, char *argv[]) {
         frame_send.ack = 0;
 
         printf("Enter Data: ");
-        fgets(buffer, MAX_DATA_SIZE, stdin);
-        buffer[strcspn(buffer, "\n")] = '\0'; // Remove newline character
+        fgets(buffer, MAX_DATA_SIZE, stdin);  //stdin: Standard input stream. This stream is typically used for reading input from the user, such as keyboard input.
+        buffer[strcspn(buffer, "\n")] = '\0'; // Remove newline character    // In other words, it finds the index of the first occurrence of '\n' in buffer
         strcpy(frame_send.packet.data, buffer);
 
         sendto(sockfd, &frame_send, sizeof(Frame), 0, (struct sockaddr *)&serverAddr, sizeof(serverAddr));
