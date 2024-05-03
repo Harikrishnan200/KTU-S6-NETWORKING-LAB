@@ -23,7 +23,7 @@ int main(int afg, char *argv)
        serv_addr.sin_family=AF_INET;
        serv_addr.sin_addr.s_addr=INADDR_ANY;
        serv_addr.sin_port=htons(SERV_TCP_PORT);
-       
+
        printf("\nBinded");
        bind(sockfd,(struct sockaddr*)&serv_addr, sizeof(serv_addr));
        printf("\nListening...");
@@ -31,7 +31,7 @@ int main(int afg, char *argv)
        clength=sizeof(cli_addr);
        newsockfd=accept(sockfd,(struct sockaddr*) &cli_addr,&clength);
        close(sockfd);
-       read(newsockfd, &str, MAX);
+       read(newsockfd, &str, MAX);   //  read(newsockfd, str, MAX);  is also correct 
        printf("\nClient message\n File Name : %s\n", str);
        f1=fopen(str, "r");
        while(fgets(buff, 4096, f1)!=NULL)
