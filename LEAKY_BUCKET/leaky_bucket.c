@@ -25,7 +25,7 @@ int main()
 	nsec=i;
 	
 	
-	printf("\nTime Recieved\t Sent \t Dropped \t Remaining\n");
+	printf("\nTime Received\t Sent \t Dropped \t Remaining\n");
 	for(i=0;i<nsec ||rem ;i++)
 	{	
 		flag=0;
