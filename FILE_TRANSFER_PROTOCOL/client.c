@@ -14,7 +14,7 @@ int main(int arg,char*argv[])
 {
        int sockfd,n;
        struct sockaddr_in serv_addr;
-       struct hostent*server;   // not used in this program
+       struct hostent*server;   // not used in this program , it is used for representing host informations
        char send[MAX],recvline[MAX],s[MAX],name[MAX];
 
        sockfd=socket(AF_INET,SOCK_STREAM,0);
