@@ -2,52 +2,47 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
-#define PORT 8080
-#define MAXLINE 1024
+#define PORT_NO 5000
+#define BUFFER_SIZE 1024
 
 int main() {
     int sockfd;
-    char buffer[MAXLINE];
-    struct sockaddr_in servaddr;
+    struct sockaddr_in serv_addr;
+    char buffer[BUFFER_SIZE];
 
-    // Creating socket file descriptor
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("ERROR opening socket");
+        exit(1);
     }
 
-    memset(&servaddr, 0, sizeof(servaddr));
+    memset(&serv_addr, 0, sizeof(serv_addr));
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT_NO);
 
-    // Filling server information
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_port = htons(PORT);
-    servaddr.sin_addr.s_addr = INADDR_ANY;
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("ERROR connecting");
+        exit(1);
+    }
 
-    int n, len;
+    strcpy(buffer, "Hello, Server!");
+    send(sockfd, buffer, strlen(buffer), 0);
+    printf("Message sent\n");
 
-    // Send time request to server
-    sendto(sockfd, "TIME", strlen("TIME"),
-        MSG_CONFIRM, (const struct sockaddr *)&servaddr,
-            sizeof(servaddr));
-    printf("Time request sent.\n");
-
-    // Receive time from server
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE,
-                MSG_WAITALL, NULL, NULL);
-    buffer[n] = '\0';
-
-    // Display received time
-    printf("Server Time: %s\n", buffer);
+    memset(buffer, 0, sizeof(buffer));
+    recv(sockfd, buffer, sizeof(buffer), 0);
+    printf("Received: %s\n", buffer);
 
     close(sockfd);
     return 0;
 }
-
 /*
+gcc -o client client.c
+./client
 
-OUTPUT:
-
-Time request sent.
-Server Time: 16:00:00
+*/
