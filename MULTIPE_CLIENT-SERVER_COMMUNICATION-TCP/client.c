@@ -2,40 +2,49 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <arpa/inet.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 
-#define PORT 8080
+#define PORT_NO 5000
 #define BUFFER_SIZE 1024
 
-int main(int argc, char const *argv[]) {
-    int sock = 0;
+int main() {
+    int sockfd;
     struct sockaddr_in serv_addr;
-    char buffer[BUFFER_SIZE] = {0};
+    char buffer[BUFFER_SIZE];
 
-    // Creating socket file descriptor
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        perror("Socket creation error");
-        exit(EXIT_FAILURE);
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        perror("ERROR opening socket");
+        exit(1);
     }
 
+    memset(&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_port = htons(PORT_NO);
 
-    // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr) <= 0) {
-        perror("Invalid address/ Address not supported");
-        exit(EXIT_FAILURE);
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
+        perror("ERROR connecting");
+        exit(1);
     }
 
-    // Connecting to server
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
-        perror("Connection Failed");
-        exit(EXIT_FAILURE);
-    }
+    strcpy(buffer, "Hello, Server!");
+    send(sockfd, buffer, strlen(buffer), 0);
+    printf("Message sent\n");
 
-    // Receiving message from server
-    read(sock, buffer, BUFFER_SIZE);
-    printf("Message from server: %s\n", buffer);
+    memset(buffer, 0, sizeof(buffer));
+    recv(sockfd, buffer, sizeof(buffer), 0);
+    printf("Received: %s\n", buffer);
 
+    close(sockfd);
     return 0;
 }
+
+
+/*
+gcc -o client client.c
+./client
+
+*/
