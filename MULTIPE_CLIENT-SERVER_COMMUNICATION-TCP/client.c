@@ -21,7 +21,7 @@ int main() {
         exit(1);
     }
 
-    memset(&serv_addr, 0, sizeof(serv_addr));
+    memset(&serv_addr, 0, sizeof(serv_addr)); // memory bolck intialization
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT_NO);
 
