@@ -63,7 +63,7 @@ int main() {
     // Main loop to accept and handle clients
     while (1) {
         // Accept a new connection
-        client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &addr_size);
+        client_sock = accept(server_sock, (struct sockaddr *)&client_addr, &addr_size); // it returns the client sock_fd
 
         // Find an available thread ID to handle the client
         for (int i = 0; i < MAX_CLIENTS; i++) {
