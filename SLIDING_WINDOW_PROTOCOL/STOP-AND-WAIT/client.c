@@ -31,6 +31,7 @@ int main()
 	printf("\n");
 	sprintf(buf,"%d", nof);
 	k = send(sock_desc,buf,100,0);
+    
 	for(int i=0;i<nof;i++)
 	{
 		if(i%2==0){

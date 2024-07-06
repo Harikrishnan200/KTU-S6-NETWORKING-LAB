@@ -45,6 +45,7 @@ int main()
 	printf("Server accepted client\n\n");
 	k = recv(temp_sock_desc,buf,100,0);
 	int nof = atoi(buf);
+    
 	for(int i=0;i<nof;i++)
 	{	if(i%2==0){
 			k=recv(temp_sock_desc,buf,100,0);
