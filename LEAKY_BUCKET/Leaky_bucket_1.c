@@ -1,5 +1,5 @@
 #include<stdio.h>
-int main(){
+int main(void){
     int incoming_packet,outgoing_rate=0,bucket_size,store=0,n;
     printf("Enter the bucket size: ");
     scanf("%d",&bucket_size);
