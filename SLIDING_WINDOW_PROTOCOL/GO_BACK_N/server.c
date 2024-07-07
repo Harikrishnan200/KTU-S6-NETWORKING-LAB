@@ -1,9 +1,9 @@
-#include <netinet/in.h>  
+#include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>  // for setting ARQ time limit
-#include <sys/socket.h>  
-#include <unistd.h>  
+#include <sys/socket.h>
+#include <unistd.h>
 
 #define SERVER_PORT 6000
 #define CLIENT_PORT 8000
@@ -20,8 +20,7 @@ typedef struct Frame {
 
 int sendWindow(int sockfd, struct sockaddr_in *cliaddr, int clilen, int frame_num, char *msg);
 
-int main()
-{
+int main() {
     int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
     if (sockfd == -1) {
         printf("Socket creation failed...\n");
@@ -30,9 +29,9 @@ int main()
     printf("Socket successfully created..\n");
 
     struct sockaddr_in servaddr;
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(SERVER_PORT);  
-    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_port = htons(SERVER_PORT);
+    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
 
     if (bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
         printf("Socket bind failed...\n");
@@ -50,7 +49,7 @@ int main()
     tv.tv_usec = 0;
     if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
         printf("Error setting timeout\n");
-    }   
+    }
 
     // Server side processing...
     char msg[32];
@@ -60,15 +59,14 @@ int main()
     Frame f;
     int frame_num = 0;
     int i = sendWindow(sockfd, &cliaddr, len, frame_num, msg);
-    while (msg[i] != '\0') {
+    while (msg[frame_num] != '\0') {
         if (recvfrom(sockfd, &f, sizeof(f), 0, (struct sockaddr*) &cliaddr, &len) < 0) {
             printf("Timed out...resending window from [%d]\n", frame_num);
             i = sendWindow(sockfd, &cliaddr, len, frame_num, msg);
         } else if (f.type == ACK && f.no == frame_num) {
             printf("Received ack [%d]\n", frame_num);
             frame_num++;
-            i++;
-            if (msg[i] != '\0') {
+            if (msg[frame_num + WINDOW_SIZE - 1] != '\0') {
                 f.data = msg[frame_num + WINDOW_SIZE - 1];
                 f.type = DATA;
                 f.no = frame_num + WINDOW_SIZE - 1;
@@ -98,6 +96,5 @@ int sendWindow(int sockfd, struct sockaddr_in *cliaddr, int clilen, int frame_nu
         printf("Sent frame [%d] containing [%c]\n", frame_num + i, f.data);
         i++;
     }
-
     return i;
 }
