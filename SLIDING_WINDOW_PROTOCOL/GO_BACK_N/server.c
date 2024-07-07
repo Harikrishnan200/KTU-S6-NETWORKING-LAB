@@ -1,127 +1,103 @@
+#include <netinet/in.h>  
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/time.h>
-#include <netinet/in.h>
-#include <string.h>
-#include <unistd.h>
-#include <arpa/inet.h>
-#include <fcntl.h>
+#include <sys/time.h>  // for setting ARQ time limit
+#include <sys/socket.h>  
+#include <unistd.h>  
+
+#define SERVER_PORT 6000
+#define CLIENT_PORT 8000
+#define WINDOW_SIZE 3
+#define DATA 0
+#define ACK 1
+#define FIN 2
+
+typedef struct Frame {
+    char data;
+    int type;  // data = 0, ack = 1, fin=2
+    int no;
+} Frame;
+
+int sendWindow(int sockfd, struct sockaddr_in *cliaddr, int clilen, int frame_num, char *msg);
+
 int main()
 {
-    int s_sock, c_sock;
-    s_sock = socket(AF_INET, SOCK_STREAM, 0);
-    struct sockaddr_in server, other;
-    memset(&server, 0, sizeof(server));
-    memset(&other, 0, sizeof(other));
-    server.sin_family = AF_INET;
-    server.sin_port = htons(9009);
-    server.sin_addr.s_addr = INADDR_ANY;
-    socklen_t add;
-
-    if (bind(s_sock, (struct sockaddr *)&server, sizeof(server)) == -1)
-    {
-        printf("Binding failed\n");
-        return 0;
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sockfd == -1) {
+        printf("Socket creation failed...\n");
+        exit(-1);
     }
-    printf("\tServer Up\n Go back n (n=3) used to send 10 messages \n\n");
-    listen(s_sock, 10);
-    add = sizeof(other);
-    c_sock = accept(s_sock, (struct sockaddr *)&other, &add);
-    time_t t1, t2;
-    char msg[50] = "server message :";
-    char buff[50];
-    int flag = 0;
+    printf("Socket successfully created..\n");
 
-    fd_set set1, set2, set3;
-    struct timeval timeout1, timeout2, timeout3;
-    int rv1, rv2, rv3;
+    struct sockaddr_in servaddr;
+    servaddr.sin_family = AF_INET; 
+    servaddr.sin_port = htons(SERVER_PORT);  
+    servaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  
 
-    int i = -1;
-qq:
-    i = i + 1;
-    bzero(buff, sizeof(buff));
-    char buff2[60];
-    bzero(buff2, sizeof(buff2));
-    strcpy(buff2, "server message :");
-    buff2[strlen(buff2)] = i + '0';
-    buff2[strlen(buff2)] = '\0';
-    printf("Message sent to client :%s \n", buff2);
-    write(c_sock, buff2, sizeof(buff2));
-    usleep(1000);
-    i = i + 1;
-    bzero(buff2, sizeof(buff2));
-    strcpy(buff2, msg);
-    buff2[strlen(msg)] = i + '0';
-    printf("Message sent to client :%s \n", buff2);
-    write(c_sock, buff2, sizeof(buff2));
-    i = i + 1;
-    usleep(1000);
-qqq:
-    bzero(buff2, sizeof(buff2));
-    strcpy(buff2, msg);
-    buff2[strlen(msg)] = i + '0';
-    printf("Message sent to client :%s \n", buff2);
-    write(c_sock, buff2, sizeof(buff2));
-    FD_ZERO(&set1);
-    FD_SET(c_sock, &set1);
-    timeout1.tv_sec = 2;
-    timeout1.tv_usec = 0;
-
-    rv1 = select(c_sock + 1, &set1, NULL, NULL, &timeout1);
-    if (rv1 == -1)
-        perror("select error ");
-    else if (rv1 == 0)
-    {
-        printf("Going back from %d:timeout \n", i);
-        i = i - 3;
-        goto qq;
+    if (bind(sockfd, (struct sockaddr*)&servaddr, sizeof(servaddr)) != 0) {
+        printf("Socket bind failed...\n");
+        exit(-1);
     }
-    else
-    {
-        read(c_sock, buff, sizeof(buff));
-        printf("Message from Client: %s\n", buff);
+
+    struct sockaddr_in cliaddr;
+    cliaddr.sin_family = AF_INET;
+    cliaddr.sin_port = htons(CLIENT_PORT);
+    cliaddr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+
+    // For setting the socket to timeout after 1s (waiting time)
+    struct timeval tv;
+    tv.tv_sec = 1;
+    tv.tv_usec = 0;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+        printf("Error setting timeout\n");
+    }   
+
+    // Server side processing...
+    char msg[32];
+    unsigned int len = sizeof(cliaddr);
+    printf("Enter a message: ");
+    scanf("%s", msg);
+    Frame f;
+    int frame_num = 0;
+    int i = sendWindow(sockfd, &cliaddr, len, frame_num, msg);
+    while (msg[i] != '\0') {
+        if (recvfrom(sockfd, &f, sizeof(f), 0, (struct sockaddr*) &cliaddr, &len) < 0) {
+            printf("Timed out...resending window from [%d]\n", frame_num);
+            i = sendWindow(sockfd, &cliaddr, len, frame_num, msg);
+        } else if (f.type == ACK && f.no == frame_num) {
+            printf("Received ack [%d]\n", frame_num);
+            frame_num++;
+            i++;
+            if (msg[i] != '\0') {
+                f.data = msg[frame_num + WINDOW_SIZE - 1];
+                f.type = DATA;
+                f.no = frame_num + WINDOW_SIZE - 1;
+                sendto(sockfd, &f, sizeof(f), 0, (struct sockaddr*) &cliaddr, len);
+                printf("Sent frame [%d] containing [%c]\n", frame_num + WINDOW_SIZE - 1, f.data);
+            }
+        } else {
+            printf("Bad Frame or unexpected ack! Frame number: %d, Expected: %d\n", f.no, frame_num);
+        }
+    }
+    f.type = FIN;
+    sendto(sockfd, &f, sizeof(f), 0, (struct sockaddr*) &cliaddr, len);
+
+    // Close the socket
+    close(sockfd);
+}
+
+int sendWindow(int sockfd, struct sockaddr_in *cliaddr, int clilen, int frame_num, char *msg) {
+    // Sends whole window and returns number of frames sent
+    int i = 0;
+    Frame f;
+    while (msg[frame_num + i] != '\0' && i < WINDOW_SIZE) {
+        f.data = msg[frame_num + i];
+        f.type = DATA;
+        f.no = frame_num + i;
+        sendto(sockfd, &f, sizeof(f), 0, (struct sockaddr*) cliaddr, clilen);
+        printf("Sent frame [%d] containing [%c]\n", frame_num + i, f.data);
         i++;
-        if (i <= 9)
-            goto qqq;
-    }
-qq2:
-    FD_ZERO(&set2);
-    FD_SET(c_sock, &set2);
-    timeout2.tv_sec = 3;
-    timeout2.tv_usec = 0;
-    rv2 = select(c_sock + 1, &set2, NULL, NULL, &timeout2);
-    if (rv2 == -1)
-        perror("select error "); // an error accured
-    else if (rv2 == 0)
-    {
-        printf("Going back from %d:timeout on last 2\n", i - 1);
-        i = i - 2;
-        bzero(buff2, sizeof(buff2));
-        strcpy(buff2, msg);
-        buff2[strlen(buff2)] = i + '0';
-        write(c_sock, buff2, sizeof(buff2));
-        usleep(1000);
-        bzero(buff2, sizeof(buff2));
-        i++;
-        strcpy(buff2, msg);
-        buff2[strlen(buff2)] = i + '0';
-        write(c_sock, buff2, sizeof(buff2));
-        goto qq2;
-    } // a timeout occured
-    else
-    {
-        read(c_sock, buff, sizeof(buff));
-        printf("Message from Client: %s\n", buff);
-        bzero(buff, sizeof(buff));
-        read(c_sock, buff, sizeof(buff));
-        printf("Message from Client: %s\n", buff);
     }
 
-    //}
-
-    close(c_sock);
-    close(s_sock);
-    return 0;
+    return i;
 }
