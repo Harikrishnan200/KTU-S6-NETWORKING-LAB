@@ -16,8 +16,8 @@ int main() {
 
     // Create socket
     if ((server_socket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("Socket creation error");
-        exit(EXIT_FAILURE);
+        printf("Socket creation error");
+        exit(0);
     }  
 
     // Set server address     (Here, the server address structure server_address is initialized)
@@ -27,28 +27,28 @@ int main() {
 
     // Bind socket to address
     if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {     // bind() is used to binds the socket to the server address
-        perror("Bind failed");
-        exit(EXIT_FAILURE);
+        printf("Bind failed");
+        exit(0);
     }
 
     // Listen for connections
     if (listen(server_socket, 3) < 0) {   //This line puts the server socket in the listening state using the listen() function. It specifies the maximum number of queued connections that the system should allow (in this case, 3)
-        perror("Listen failed");
-        exit(EXIT_FAILURE);
+        printf("Listen failed");
+        exit(0);
     }
 
     // Accept incoming connection
     if ((client_socket = accept(server_socket, (struct sockaddr *)&client_address, &client_address_len)) < 0) {
-        perror("Accept failed");
-        exit(EXIT_FAILURE);
+        printf("Accept failed");
+        exit(0);
     }
 
     // Receive data from client
-    read(client_socket, buffer, BUFFER_SIZE);
+    read(client_socket, buffer, BUFFER_SIZE);    // or recv(client_socket, buffer, BUFFER_SIZE, 0);   0 -> FLAG BIT
     printf("Message from client: %s\n", buffer);
 
     // Send data to client
-    send(client_socket, message, strlen(message), 0);
+    write(client_socket, message, strlen(message));  // or send(client_socket, message, strlen(message), 0);   0 -> FLAG BIT
     printf("Message sent to client\n");
 
     // Close sockets
@@ -57,3 +57,7 @@ int main() {
 
     return 0;
 }
+
+//OUTPUT
+// Message from client: Hello from client
+// Message sent to client
