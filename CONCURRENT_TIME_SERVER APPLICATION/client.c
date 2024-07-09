@@ -14,11 +14,11 @@ int main() {
 
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
+        printf("socket creation failed");
+        exit(0);
     }
 
-    memset(&servaddr, 0, sizeof(servaddr));
+    // memset(&servaddr, 0, sizeof(servaddr));   (optional)
 
     // Filling server information
     servaddr.sin_family = AF_INET;
@@ -28,14 +28,14 @@ int main() {
     int n, len;
 
     // Send time request to server
-    sendto(sockfd, "TIME", strlen("TIME"),
+    sendto(sockfd, "Time request sent", strlen("TIME"),
         MSG_CONFIRM, (const struct sockaddr *)&servaddr,
-            sizeof(servaddr));
+            sizeof(servaddr));                     //  MSG_CONFIRM is the flag , you can also use 0 instead of it.
     printf("Time request sent.\n");
 
     // Receive time from server
     n = recvfrom(sockfd, (char *)buffer, MAXLINE,
-                MSG_WAITALL, NULL, NULL);
+                MSG_WAITALL, NULL, NULL);       //  MSG_WAITALL is the flag , you can also use 0 instead of it.
     buffer[n] = '\0';
 
     // Display received time
@@ -51,3 +51,14 @@ OUTPUT:
 
 Time request sent.
 Server Time: 16:00:00
+
+*/
+
+/*
+
+OUTPUT:
+
+Time request sent.
+Server Time: 16:00:00
+    
+    */

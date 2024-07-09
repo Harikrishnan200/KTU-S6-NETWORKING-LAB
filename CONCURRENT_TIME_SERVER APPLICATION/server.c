@@ -15,12 +15,12 @@ int main() {
 
     // Creating socket file descriptor
     if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
+        printf("socket creation failed");
+        exit(0);
     }
 
-    memset(&servaddr, 0, sizeof(servaddr));
-    memset(&cliaddr, 0, sizeof(cliaddr));
+    // memset(&servaddr, 0, sizeof(servaddr));
+    // memset(&cliaddr, 0, sizeof(cliaddr));
 
     // Filling server information
     servaddr.sin_family = AF_INET; // IPv4
@@ -30,8 +30,8 @@ int main() {
     // Bind the socket with the server address
     if (bind(sockfd, (const struct sockaddr *)&servaddr,
             sizeof(servaddr)) < 0 ) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
+        printf("bind failed");
+        exit(0);
     }
 
     int len, n;
@@ -39,10 +39,13 @@ int main() {
     while (1) {
         len = sizeof(cliaddr); //len is value/result
 
-        n = recvfrom(sockfd, (char *)buffer, MAXLINE,
+        n = recvfrom(sockfd,buffer, MAXLINE,
                     MSG_WAITALL, ( struct sockaddr *) &cliaddr,
-                    &len);
+                    &len);   //  MSG_WAITALL is the flag , you can also use 0 instead of it.
         buffer[n] = '\0';
+
+        printf("Time request from client");
+        puts(buffer);
 
         // Get current time
         time_t currentTime;
@@ -52,10 +55,13 @@ int main() {
         strftime(buffer, MAXLINE, "%Y-%m-%d %H:%M:%S", timeinfo);
 
         // Send time back to client
-        sendto(sockfd, (const char *)buffer, strlen(buffer),
-            MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
-                len);
-    }
+        sendto(sockfd, (char *)buffer, strlen(buffer),
+            MSG_CONFIRM, (struct sockaddr *) &cliaddr,  
+                len);                //  MSG_CONFIRM is the flag , you can also use 0 instead of it.
+    } 
 
     return 0;
 }
+
+//OUTPUT
+// Time request from client
