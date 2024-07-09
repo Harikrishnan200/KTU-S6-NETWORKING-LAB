@@ -7,22 +7,21 @@
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
-#define SERV_TCP_PORT 5035
+#define PORT 5035
 #define MAX 60
-int i, j, tem;
-char buff[4096], t;
-FILE *f1;
-int main(int afg, char *argv)
-{
+
+int main(){
+
        int sockfd, newsockfd, clength;
+       char buff[4096]={0};
+       FILE *f1;
        struct sockaddr_in serv_addr,cli_addr;
-       char t[MAX], str[MAX];
-       strcpy(t,"exit");
+       char str[MAX] = {0};
 
        sockfd=socket(AF_INET, SOCK_STREAM,0);
        serv_addr.sin_family=AF_INET;
        serv_addr.sin_addr.s_addr=INADDR_ANY;
-       serv_addr.sin_port=htons(SERV_TCP_PORT);
+       serv_addr.sin_port=PORT;
 
        printf("\nBinded");
        bind(sockfd,(struct sockaddr*)&serv_addr, sizeof(serv_addr));
@@ -30,8 +29,7 @@ int main(int afg, char *argv)
        listen(sockfd, 5);
        clength=sizeof(cli_addr);
        newsockfd=accept(sockfd,(struct sockaddr*) &cli_addr,&clength);
-       close(sockfd);
-       read(newsockfd, &str, MAX);   //  read(newsockfd, str, MAX);  is also correct 
+       read(newsockfd, str, MAX);   
        printf("\nClient message\n File Name : %s\n", str);
        f1=fopen(str, "r");
        while(fgets(buff, 4096, f1)!=NULL)
@@ -40,6 +38,8 @@ int main(int afg, char *argv)
             printf("\n");
        }
        fclose(f1);
+       close(sockfd);
        printf("\nFile Transferred\n");
+       
        return 0;
 }
