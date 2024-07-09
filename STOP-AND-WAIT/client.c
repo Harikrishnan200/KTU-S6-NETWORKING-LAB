@@ -1,54 +1,72 @@
-#include<sys/socket.h>
-#include<netinet/in.h>
-#include<stdio.h>
-#include<string.h>
-#include<stdlib.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
-int main()
+#include <arpa/inet.h>
+#include <sys/socket.h>
 
-{
-	char buf[100];
-	int k,nof;
-	socklen_t len;
-	int sock_desc;
-	struct sockaddr_in server;
-	sock_desc=socket(AF_INET, SOCK_STREAM,0);
+typedef struct packet{
+    char data[1024];
+}Packet;
 
-	if(sock_desc==-1)
-		printf("Error in Socket creation\n");
+typedef struct frame{
+    int frame_kind; //ACK:0, SEQ:1 FIN:2
+    int sq_no;
+    int ack;
+    Packet packet;
+}Frame;
 
-	server.sin_family=AF_INET;
-	server.sin_addr.s_addr=INADDR_ANY;
-
-	server.sin_port=3003;
-	k=connect(sock_desc, (struct sockaddr*) &server, sizeof(server));
-
-	if(k==-1)
-		printf("Error in connecting to server\n");
-	printf("Socket Creation Successful\nConnected to Server\n");
-	printf("Enter the total number of frames:");
-	scanf("%d",&nof);
-	printf("\n");
-	sprintf(buf,"%d", nof);
-	k = send(sock_desc,buf,100,0);
-    
-	for(int i=0;i<nof;i++)
-	{
-		if(i%2==0){
-			printf("Frame [0] Sent\n");
-			k=send(sock_desc,buf,100,0);
-			sleep(1);
-		}
-		else
-		{
-			printf("Frame [1] Sent\n");
-			k = send(sock_desc,buf,100,0);
-			sleep(1);
-		}
-		printf("Acknowledgement received from server for Frame [%d]\n",(i%2==0)?1:0);
-		k=read(sock_desc,buf,100);
-		printf("\n");
+int main(int argc, char *argv[]){
+    if (argc != 2){
+		printf("Usage: %s <port>", argv[0]);
+		exit(0);	
 	}
-	close(sock_desc);
+
+	int port = atoi(argv[1]);
+	int sockfd;
+	struct sockaddr_in serverAddr;
+	char buffer[1024];
+	socklen_t addr_size;
+
+	int frame_id = 0;
+	Frame frame_send;
+	Frame frame_recv;
+	int ack_recv = 1;
+
+	sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+	
+	memset(&serverAddr, '\0', sizeof(serverAddr));
+	serverAddr.sin_family = AF_INET;
+	serverAddr.sin_port = htons(port);
+	serverAddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	
+	while(1){
+		
+		if(ack_recv == 1){
+			frame_send.sq_no = frame_id;
+			frame_send.frame_kind = 1;
+			frame_send.ack = 0;		
+	
+			printf("Enter Data: ");
+			scanf("%s", buffer);
+			strcpy(frame_send.packet.data, buffer);
+			sendto(sockfd, &frame_send, sizeof(Frame), 0, (struct sockaddr*)&serverAddr, sizeof(serverAddr));
+			printf("[+]Frame Send\n");
+		}
+		int addr_size = sizeof(serverAddr);
+		int f_recv_size = recvfrom(sockfd, &frame_recv, sizeof(frame_recv), 0 ,(struct sockaddr*)&serverAddr, &addr_size);
+		
+		if( f_recv_size > 0 && frame_recv.sq_no == 0 && frame_recv.ack == frame_id+1){
+			printf("[+]Ack Received\n");
+			ack_recv = 1;
+		}else{
+			printf("[-]Ack Not Received\n");
+			ack_recv = 0;
+		}	
+  			
+		frame_id++;		
+	}
+	
+	close(sockfd);
 	return 0;
 }
