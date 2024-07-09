@@ -11,23 +11,24 @@ int main() {
     int server_socket;
     struct sockaddr_in server_addr, client_addr;
     char buffer[BUFFER_SIZE];
+    char *message = "Hello from server";
 
     // Create UDP socket
     if ((server_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {  // 0 indicates default protocol
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        printf("Socket creation failed");
+        exit(0);
     }
 
     // Initialize server address struct
-    memset(&server_addr, 0, sizeof(server_addr));  //memset: This is a function provided by the C standard library. It stands for "memory set" and is commonly used to set a block of memory to a particular value.
+    //memset(&server_addr, 0, sizeof(server_addr));  //memset: This is a function provided by the C standard library. It stands for "memory set" and is commonly used to set a block of memory to a particular value.
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(PORT);
 
     // Bind socket to address and port
     if (bind(server_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
-        perror("Bind failed");
-        exit(EXIT_FAILURE);
+        printf("Bind failed");
+        exit(0);
     }
 
     printf("Server is listening on port %d...\n", PORT);
@@ -39,8 +40,8 @@ int main() {
         int recv_len = recvfrom(server_socket, buffer, BUFFER_SIZE, 0,
                                 (struct sockaddr *)&client_addr, &client_addr_len);  //recvfrom() call, 0 is used to indicate that none of these flags are being passed
         if (recv_len == -1) {
-            perror("Receive failed");
-            exit(EXIT_FAILURE);
+            printf("Receive failed");
+            exit(0);
         }
 
         // Print received message
@@ -48,10 +49,10 @@ int main() {
         printf("Received message from client: %s\n", buffer);
 
         // Echo message back to client
-        if (sendto(server_socket, buffer, recv_len, 0,
+        if (sendto(server_socket, message, strlen(message), 0,
                    (struct sockaddr *)&client_addr, client_addr_len) == -1) {
-            perror("Sendto failed");
-            exit(EXIT_FAILURE);
+            printf("Sendto failed");
+            exit(0);
         }
     }
 
@@ -83,6 +84,6 @@ recvfrom() expects a pointer to a socket address structure (struct sockaddr) whe
  output
  
  Server is listening on port 12345...
-Received message from client: Hello from Client 1!
+Received message from client: Hello from client!
 
 */

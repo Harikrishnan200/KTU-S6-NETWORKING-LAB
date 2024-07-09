@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-#define SERVER_IP "127.0.0.1"
 #define PORT 12345
 #define BUFFER_SIZE 1024
 
@@ -12,25 +11,25 @@ int main() {
     int client_socket;
     struct sockaddr_in server_addr;
     char buffer[BUFFER_SIZE];
-    const char *message = "Hello, server!";
+    char *message = "Hello from client!";
 
     // Create UDP socket
     if ((client_socket = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
-        perror("Socket creation failed");
-        exit(EXIT_FAILURE);
+        printf("Socket creation failed");
+        exit(0);
     }
 
     // Initialize server address struct
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = inet_addr(SERVER_IP);
+    // memset(&server_addr, 0, sizeof(server_addr));  // memory initialization
+    server_addr.sin_family = AF_INET;  // AF_INET is the protocol family of ipv4
+    server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(PORT);
 
     // Send message to server
     if (sendto(client_socket, message, strlen(message), 0,
                (struct sockaddr *)&server_addr, sizeof(server_addr)) == -1) {
-        perror("Sendto failed");
-        exit(EXIT_FAILURE);
+        printf("Sendto failed");
+        exit(0);
     }
 
     printf("Message sent to server: %s\n", message);
@@ -40,8 +39,8 @@ int main() {
     int recv_len = recvfrom(client_socket, buffer, BUFFER_SIZE, 0,
                             (struct sockaddr *)&server_addr, &server_addr_len);
     if (recv_len == -1) {
-        perror("Receive failed");
-        exit(EXIT_FAILURE);
+        printf("Receive failed");
+        exit(0);
     }
 
     // Print server's response
@@ -57,7 +56,7 @@ int main() {
 
 /*output
 
-Message sent to server: Hello, server!
-Received response from server: Hello, client!
+Message sent to server: Hello from client!
+Received response from server: Hello from server
 
 */
